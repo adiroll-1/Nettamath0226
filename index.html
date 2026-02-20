@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>אימון שברים – כיתה ו׳</title>
+  <style>
+    :root{
+      --bg:#f6f9fc; --card:#ffffff; --ink:#0f172a; --muted:#475569;
+      --accent:#2563eb; --good:#16a34a; --bad:#dc2626; --soft:#e2e8f0;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family: system-ui, -apple-system, Segoe UI, Arial; background:var(--bg); color:var(--ink);}
+    header{padding:18px 14px; text-align:center;}
+    header h1{margin:0 0 6px; font-size:20px;}
+    header p{margin:0; color:var(--muted); font-size:14px;}
+    .wrap{max-width:980px; margin:0 auto; padding:0 14px 28px;}
+    .grid{display:grid; gap:12px; grid-template-columns: 1.25fr .75fr;}
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr;} }
+    .card{background:var(--card); border:1px solid var(--soft); border-radius:14px; box-shadow:0 6px 18px rgba(15,23,42,.06); padding:14px;}
+    .row{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+    label{font-size:13px; color:var(--muted);}
+    select, input[type="text"], input[type="number"]{
+      padding:10px 12px; border:1px solid var(--soft); border-radius:12px; background:#fff; font-size:14px;
+    }
+    input[type="text"]{min-width:160px}
+    button{
+      border:0; border-radius:12px; padding:10px 12px; font-size:14px;
+      background:var(--accent); color:#fff; cursor:pointer;
+    }
+    button.secondary{background:#0f172a;}
+    button.ghost{background:#fff; color:var(--ink); border:1px solid var(--soft);}
+    button:disabled{opacity:.55; cursor:not-allowed}
+    .stat{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:10px;}
+    @media (max-width: 520px){ .stat{grid-template-columns:repeat(2,1fr);} }
+    .pill{border:1px solid var(--soft); border-radius:12px; padding:10px; background:#fff;}
+    .pill .k{font-size:12px; color:var(--muted); margin-bottom:4px;}
+    .pill .v{font-weight:700; font-size:16px;}
+    .qbox{padding:14px; border-radius:12px; border:1px dashed #cbd5e1; background:#fbfdff;}
+    .qtext{font-size:22px; font-weight:800; letter-spacing:.2px;}
+    .small{font-size:12px; color:var(--muted); line-height:1.35;}
+    .feedback{margin-top:10px; font-weight:700;}
+    .feedback.good{color:var(--good);}
+    .feedback.bad{color:var(--bad);}
+    .steps{margin-top:10px; padding:10px; border-radius:12px; background:#f8fafc; border:1px solid var(--soft); display:none;}
+    .steps pre{margin:0; white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas; font-size:13px;}
+    .hr{height:1px; background:var(--soft); margin:12px 0;}
+    .list{margin:0; padding:0 18px;}
+    .list li{margin:6px 0; color:var(--muted);}
+    .muted{color:var(--muted);}
+    .badge{display:inline-block; padding:4px 8px; border-radius:999px; background:#eaf2ff; color:#1d4ed8; font-size:12px; font-weight:700;}
+    .danger{background:#fee2e2; color:#991b1b;}
+    .ok{background:#dcfce7; color:#166534;}
+    .twoCol{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+    @media (max-width: 720px){ .twoCol{grid-template-columns:1fr;} }
+    .mistake{padding:10px; border:1px solid var(--soft); border-radius:12px; background:#fff;}
+    .mistake .mQ{font-weight:800; margin-bottom:6px;}
+    .mistake .mA{font-size:13px; color:var(--muted);}
+    .mini{font-size:11px; color:var(--muted);}
+    .toggle{display:flex; gap:8px; align-items:center;}
+    .toggle input{transform:scale(1.1);}
+  </style>
+</head>
+<body>
+<header>
+  <h1>אימון שברים – כיתה ו׳</h1>
+  <p>תרגול חכם עם ניקוד, רצף תשובות, וחזרה אוטומטית על טעויות</p>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div class="row" style="gap:12px;">
+          <span class="badge" id="modeBadge">מצב: מעורב</span>
+          <span class="badge ok" id="levelBadge">רמה: 1</span>
+        </div>
+        <div class="row">
+          <button class="ghost" id="btnReset">איפוס</button>
+          <button class="secondary" id="btnNext">שאלה חדשה</button>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row" style="gap:12px;">
+        <div>
+          <label for="mode">סוג תרגול</label><br/>
+          <select id="mode">
+            <option value="mixed">מעורב (הכל)</option>
+            <option value="addsub_same">חיבור/חיסור – מכנה זהה</option>
+            <option value="addsub_lcm">חיבור/חיסור – מכנה משותף</option>
+            <option value="mul">כפל שברים</option>
+            <option value="div">חילוק שברים</option>
+            <option value="word">בעיות מילוליות (בחירה)</option>
+            <option value="review">חזרה על טעויות</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="difficulty">רמת קושי</label><br/>
+          <select id="difficulty">
+            <option value="1">1 (קל)</option>
+            <option value="2">2 (בינוני)</option>
+            <option value="3">3 (קשה)</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="timer">טיימר (דקות)</label><br/>
+          <select id="timer">
+            <option value="0">ללא</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="30">30</option>
+            <option value="45">45 (מבחן)</option>
+          </select>
+        </div>
+
+        <div class="toggle" style="margin-top:18px;">
+          <input type="checkbox" id="showHints" />
+          <label for="showHints">אפשר רמזים</label>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="qbox">
+        <div class="row" style="justify-content:space-between;">
+          <div class="qtext" id="question">לחצי על "שאלה חדשה"</div>
+          <div class="mini" id="timerBox" style="display:none;">⏱️ <span id="timerText">00:00</span></div>
+        </div>
+        <div class="small" id="subtext"></div>
+      </div>
+
+      <div style="margin-top:12px;" id="answerArea">
+        <div class="row">
+          <input type="text" id="answer" placeholder='כתבי: 5/12 או 1 1/9 או 2' autocomplete="off" />
+          <button id="btnCheck">בדיקה</button>
+          <button class="ghost" id="btnHint">רמז/פתרון חלקי</button>
+        </div>
+        <div class="feedback" id="feedback"></div>
+        <div class="steps" id="steps"><pre id="stepsPre"></pre></div>
+      </div>
+
+      <div style="margin-top:12px; display:none;" id="mcArea">
+        <div class="small muted">בחרי תשובה:</div>
+        <div class="twoCol" id="choices"></div>
+        <div class="feedback" id="feedbackMC"></div>
+      </div>
+
+      <div class="stat">
+        <div class="pill"><div class="k">ניקוד</div><div class="v" id="score">0</div></div>
+        <div class="pill"><div class="k">דיוק</div><div class="v" id="acc">0%</div></div>
+        <div class="pill"><div class="k">רצף נכון</div><div class="v" id="streak">0</div></div>
+        <div class="pill"><div class="k">שאלות</div><div class="v" id="count">0</div></div>
+      </div>
+
+      <div class="hr"></div>
+      <div class="small">
+        <b>טיפ:</b> תמיד לצמצם בסוף. אם יצא שבר מדומה אפשר גם לכתוב מספר מעורב (למשל 1 1/9).
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div><b>טעויות לשיפור</b> <span class="badge" id="mistakeCount">0</span></div>
+        <button class="ghost" id="btnReviewNow">תרגלי טעויות</button>
+      </div>
+      <div class="small muted">האפליקציה שומרת טעויות בדפדפן (LocalStorage) כדי לחזור עליהן.</div>
+      <div class="hr"></div>
+      <div id="mistakes"></div>
+
+      <div class="hr"></div>
+      <b>איך מעלים לגיטהאב</b>
+      <ol class="list">
+        <li>שמרי את הקובץ הזה בשם <b>index.html</b>.</li>
+        <li>העלי לריפו ציבורי בגיטהאב.</li>
+        <li>Settings → Pages → Deploy from branch → main / root.</li>
+      </ol>
+      <div class="small muted">זה עובד גם בלי שרת – רק HTML אחד.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ========= Utilities ========= */
+const gcd = (a,b)=> b?gcd(b,a%b):Math.abs(a);
+const lcm = (a,b)=> Math.abs(a*b)/gcd(a,b);
+
+function normSign(n,d){ if(d<0){ return [-n,-d]; } return [n,d]; }
+
+function simplify(n,d){
+  if(d===0) return {n:1,d:0};
+  [n,d] = normSign(n,d);
+  const g = gcd(n,d);
+  return {n:n/g, d:d/g};
+}
+
+function toMixed(n,d){
+  // returns {whole, n, d}
+  [n,d] = normSign(n,d);
+  const s = simplify(n,d);
+  n=s.n; d=s.d;
+  const whole = (n>=0) ? Math.floor(n/d) : -Math.floor(Math.abs(n)/d);
+  const rem = Math.abs(n - whole*d);
+  if(rem===0) return {whole:whole, n:0, d:1};
+  return {whole:whole, n:rem, d:d};
+}
+
+function fracToStr(n,d){
+  const s = simplify(n,d);
+  n=s.n; d=s.d;
+  if(d===1) return String(n);
+  const m = toMixed(n,d);
+  if(Math.abs(n) >= d && m.n!==0){
+    if(m.whole===0) return `${m.n}/${m.d}`;
+    return `${m.whole} ${m.n}/${m.d}`;
+  }
+  return `${n}/${d}`;
+}
+
+function parseFraction(input){
+  // accepts: "a/b", "a b/c" (mixed), "a" integer. Spaces ok.
+  if(!input) return null;
+  let s = input.trim();
+  s = s.replace(/−/g,'-'); // minus
+  s = s.replace(/\s+/g,' ');
+
+  // mixed "w n/d"
+  let m = s.match(/^(-?\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+  if(m){
+    const w = parseInt(m[1],10), n = parseInt(m[2],10), d = parseInt(m[3],10);
+    if(d===0) return null;
+    const sign = w<0 ? -1 : 1;
+    const num = Math.abs(w)*d + n;
+    return simplify(sign*num, d);
+  }
+
+  // simple fraction
+  m = s.match(/^(-?\d+)\s*\/\s*(\d+)$/);
+  if(m){
+    const n = parseInt(m[1],10), d = parseInt(m[2],10);
+    if(d===0) return null;
+    return simplify(n,d);
+  }
+
+  // integer
+  m = s.match(/^(-?\d+)$/);
+  if(m){
+    const n = parseInt(m[1],10);
+    return {n:n,d:1};
+  }
+  return null;
+}
+
+function equalFrac(a,b){
+  if(!a || !b) return false;
+  const sa = simplify(a.n,a.d), sb = simplify(b.n,b.d);
+  return sa.n===sb.n && sa.d===sb.d;
+}
+
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+/* ========= Question generators ========= */
+function niceDenoms(level){
+  if(level===1) return [2,3,4,5,6,8,10,12];
+  if(level===2) return [3,4,5,6,7,8,9,10,12,14,15];
+  return [4,5,6,7,8,9,10,11,12,13,14,15,16,18,20];
+}
+
+function pick(arr){ return arr[randInt(0,arr.length-1)]; }
+
+function genProperFrac(den){
+  // numerator 1..den-1
+  return {n:randInt(1,den-1), d:den};
+}
+
+function genAddSubSame(level, isSub=false){
+  const den = pick(niceDenoms(level));
+  const a = genProperFrac(den);
+  const b = genProperFrac(den);
+  // ensure non-negative for subtraction to keep grade-friendly
+  let A=a, B=b;
+  if(isSub){
+    if(A.n < B.n){ [A,B]=[B,A]; }
+    const res = simplify(A.n*den - B.n*den, den*den); // wait, wrong
+  }
+  // compute properly
+  const op = isSub ? "-" : "+";
+  const res = isSub ? simplify(A.n - B.n, den) : simplify(A.n + B.n, den);
+  const steps = isSub
+    ? `מכנה זהה (${den}). מחסרים רק מונים:\n${A.n}/${den} - ${B.n}/${den} = ${(A.n-B.n)}/${den}\nמצמצמים אם צריך.`
+    : `מכנה זהה (${den}). מחברים רק מונים:\n${A.n}/${den} + ${B.n}/${den} = ${(A.n+B.n)}/${den}\nמצמצמים אם צריך.`;
+  return {
+    kind:"free",
+    q:`${A.n}/${den} ${op} ${B.n}/${den}`,
+    sub:`מכנה זהה`,
+    ans:res,
+    ansStr: fracToStr(res.n,res.d),
+    steps
+  };
+}
+
+function genAddSubLCM(level, isSub=false){
+  const denList = niceDenoms(level);
+  // pick denominators that lead to "reasonable" LCM (<=60 for level1, <=120 for level2, <=240 for level3)
+  const maxLCM = level===1?60:(level===2?120:240);
+  let d1,d2,LCM;
+  for(let tries=0; tries<60; tries++){
+    d1=pick(denList); d2=pick(denList);
+    if(d1===d2) continue;
+    LCM = lcm(d1,d2);
+    if(LCM<=maxLCM) break;
+  }
+  LCM = lcm(d1,d2);
+  const a = genProperFrac(d1);
+  const b = genProperFrac(d2);
+
+  // For subtraction, ensure result >= 0 by swapping based on value
+  let A=a, B=b, D1=d1, D2=d2;
+  if(isSub){
+    const valA = A.n/A.d, valB=B.n/B.d;
+    if(valA < valB){ [A,B]=[B,A]; [D1,D2]=[D2,D1]; }
+  }
+
+  const op = isSub? "-" : "+";
+  const m1 = LCM/D1, m2 = LCM/D2;
+  const n1 = A.n*m1, n2=B.n*m2;
+  const resN = isSub ? (n1 - n2) : (n1 + n2);
+  const res = simplify(resN, LCM);
+
+  const steps = [
+    `מוצאים מכנה משותף: LCM(${D1}, ${D2}) = ${LCM}`,
+    `מרחיבים: ${A.n}/${D1} = ${n1}/${LCM} (כפול ${m1}),  ${B.n}/${D2} = ${n2}/${LCM} (כפול ${m2})`,
+    `מבצעים ${op}: ${n1}/${LCM} ${op} ${n2}/${LCM} = ${resN}/${LCM}`,
+    `מצמצמים: ${fracToStr(resN,LCM)}`
+  ].join("\n");
+
+  return {
+    kind:"free",
+    q:`${A.n}/${D1} ${op} ${B.n}/${D2}`,
+    sub:`מכנה משותף (LCM=${LCM})`,
+    ans:res,
+    ansStr: fracToStr(res.n,res.d),
+    steps
+  };
+}
+
+function genMul(level){
+  const d1 = pick(niceDenoms(level));
+  const d2 = pick(niceDenoms(level));
+  const a = genProperFrac(d1);
+  const b = genProperFrac(d2);
+  const res = simplify(a.n*b.n, a.d*b.d);
+  const steps = [
+    `כופלים מונים וכופלים מכנים:`,
+    `${a.n}/${a.d} × ${b.n}/${b.d} = ${(a.n*b.n)}/${(a.d*b.d)}`,
+    `מצמצמים: ${fracToStr(res.n,res.d)}`
+  ].join("\n");
+  return { kind:"free", q:`${a.n}/${a.d} × ${b.n}/${b.d}`, sub:`כפל`, ans:res, ansStr: fracToStr(res.n,res.d), steps };
+}
+
+function genDiv(level){
+  const d1 = pick(niceDenoms(level));
+  const d2 = pick(niceDenoms(level));
+  const a = genProperFrac(d1);
+  const b = genProperFrac(d2);
+  // a/b ÷ c/d = a/b × d/c
+  const res = simplify(a.n*b.d, a.d*b.n);
+  const steps = [
+    `בחילוק שברים – כופלים בהופכי:`,
+    `${a.n}/${a.d} ÷ ${b.n}/${b.d} = ${a.n}/${a.d} × ${b.d}/${b.n}`,
+    `כפל: ${(a.n*b.d)}/${(a.d*b.n)}`,
+    `מצמצמים: ${fracToStr(res.n,res.d)}`
+  ].join("\n");
+  return { kind:"free", q:`${a.n}/${a.d} ÷ ${b.n}/${b.d}`, sub:`חילוק`, ans:res, ansStr: fracToStr(res.n,res.d), steps };
+}
+
+/* Word problems (multiple choice) */
+function genWord(level){
+  const templates = [
+    // division
+    ()=>{
+      const d = pick([4,5,6,8,10,12]);
+      const top = randInt(2, d-1);
+      const total = {n:top, d:d}; // e.g. 3/4 liter
+      const cupD = pick([4,6,8,10,12,16]);
+      const cupN = 1; // 1/cupD
+      const cups = simplify(total.n*cupD, total.d*cupN); // total ÷ (1/cupD) = total * cupD
+      const q = `יש ${top}/${d} ליטר מיץ. מוזגים לכוסות של 1/${cupD} ליטר. כמה כוסות אפשר למלא?`;
+      const correct = fracToStr(cups.n,cups.d);
+      return {q, correct, why:`זו חלוקה: ${top}/${d} ÷ 1/${cupD} = ${top}/${d} × ${cupD}/1 = ${top*cupD}/${d}`};
+    },
+    // addition
+    ()=>{
+      const d1 = pick([4,6,8,10,12]);
+      const d2 = pick([2,3,4,6]);
+      const L = lcm(d1,d2);
+      const a = {n:randInt(1,d1-1), d:d1};
+      const b = {n:randInt(1,d2-1), d:d2};
+      const n = a.n*(L/d1)+b.n*(L/d2);
+      const res = simplify(n,L);
+      const q = `במתכון משתמשים ב-${a.n}/${a.d} כוס קמח ועוד ${b.n}/${b.d} כוס קמח. כמה כוסות קמח יש בסך הכול?`;
+      const correct = fracToStr(res.n,res.d);
+      return {q, correct, why:`מכנה משותף ${L}: סכום = ${n}/${L} = ${correct}`};
+    },
+    // subtraction
+    ()=>{
+      const d1 = pick([6,8,10,12]);
+      const a = {n:randInt(3,d1-1), d:d1};
+      const b = {n:randInt(1,a.n-1), d:d1};
+      const res = simplify(a.n-b.n, d1);
+      const q = `עוגה חולקה ל-${d1} חלקים שווים. נאכלו ${a.n}/${a.d} ואז עוד ${b.n}/${b.d}. כמה נשאר?`;
+      const eaten = simplify(a.n+b.n,d1);
+      const left = simplify(d1 - eaten.n, d1); // 1 - eaten
+      const correct = fracToStr(left.n,left.d);
+      return {q, correct, why:`נאכל ${fracToStr(eaten.n,eaten.d)}, נשאר 1 - זה = ${correct}`};
+    }
+  ];
+  const t = pick(templates)();
+  const correct = t.correct;
+
+  // generate choices (include common wrongs)
+  const choices = new Set([correct]);
+  const asFrac = parseFraction(correct) || {n:0,d:1};
+  const wrongs = [
+    ()=> fracToStr(asFrac.n+1, asFrac.d),
+    ()=> fracToStr(asFrac.n, asFrac.d+1),
+    ()=> fracToStr(asFrac.n+asFrac.d, asFrac.d), // off by 1
+    ()=> fracToStr(asFrac.n, asFrac.d) // duplicate safeguard
+  ];
+  while(choices.size<4){
+    const w = pick(wrongs)();
+    choices.add(w);
+  }
+  const arr = Array.from(choices);
+  // shuffle
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+
+  return {
+    kind:"mc",
+    q:t.q,
+    sub:"בעיה מילולית",
+    correct,
+    choices:arr,
+    explain:t.why
+  };
+}
+
+/* ========= State & persistence ========= */
+const LS_KEY = "fractions_app_v1";
+let state = {
+  score:0, correct:0, total:0, streak:0, level:1,
+  mistakes:[], // {q, correct, user, kind, steps, sub}
+  lastQ:null,
+  timer:{on:false, endAt:0, totalSec:0, interval:null}
+};
+
+function load(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){
+      const s = JSON.parse(raw);
+      state = {...state, ...s};
+      // safety: avoid restoring interval
+      state.timer = {on:false, endAt:0, totalSec:0, interval:null};
+    }
+  }catch(e){}
+}
+function save(){
+  const copy = {...state};
+  copy.timer = {on:false, endAt:0, totalSec:0, interval:null};
+  localStorage.setItem(LS_KEY, JSON.stringify(copy));
+}
+
+/* ========= UI ========= */
+const el = (id)=>document.getElementById(id);
+const modeSel = el("mode");
+const diffSel = el("difficulty");
+const timerSel = el("timer");
+const showHints = el("showHints");
+
+function renderStats(){
+  el("score").innerText = state.score;
+  el("count").innerText = state.total;
+  const acc = state.total ? Math.round((state.correct/state.total)*100) : 0;
+  el("acc").innerText = acc + "%";
+  el("streak").innerText = state.streak;
+  el("levelBadge").innerText = "רמה: " + state.level;
+  el("mistakeCount").innerText = state.mistakes.length;
+  el("modeBadge").innerText = "מצב: " + modeSel.options[modeSel.selectedIndex].text;
+
+  // mistakes list (last 6)
+  const box = el("mistakes");
+  box.innerHTML = "";
+  const last = state.mistakes.slice(-6).reverse();
+  if(last.length===0){
+    box.innerHTML = '<div class="small muted">אין טעויות כרגע 🎉</div>';
+  }else{
+    last.forEach(m=>{
+      const div = document.createElement("div");
+      div.className = "mistake";
+      div.innerHTML = `
+        <div class="mQ">${escapeHtml(m.q)}</div>
+        <div class="mA">ענית: <b>${escapeHtml(m.user || "—")}</b> · נכון: <b>${escapeHtml(m.correct)}</b></div>
+        <div class="mini">${escapeHtml(m.sub || "")}</div>
+      `;
+      box.appendChild(div);
+    });
+  }
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+function setQuestion(qObj){
+  state.lastQ = qObj;
+  el("question").innerText = qObj.q;
+  el("subtext").innerText = qObj.sub || "";
+  el("feedback").innerText = "";
+  el("feedback").className = "feedback";
+  el("steps").style.display = "none";
+  el("stepsPre").innerText = "";
+
+  // switch input vs multiple choice
+  if(qObj.kind==="mc"){
+    el("answerArea").style.display = "none";
+    el("mcArea").style.display = "block";
+    el("feedbackMC").innerText = "";
+    const choicesBox = el("choices");
+    choicesBox.innerHTML = "";
+    qObj.choices.forEach(ch=>{
+      const btn = document.createElement("button");
+      btn.className = "ghost";
+      btn.style.textAlign = "center";
+      btn.style.padding = "12px";
+      btn.innerText = ch;
+      btn.onclick = ()=> checkMC(ch);
+      choicesBox.appendChild(btn);
+    });
+  }else{
+    el("mcArea").style.display = "none";
+    el("answerArea").style.display = "block";
+    el("answer").value = "";
+    el("answer").focus();
+  }
+}
+
+/* ========= Timer ========= */
+function stopTimer(){
+  if(state.timer.interval) clearInterval(state.timer.interval);
+  state.timer = {on:false, endAt:0, totalSec:0, interval:null};
+  el("timerBox").style.display = "none";
+}
+
+function startTimer(minutes){
+  stopTimer();
+  if(!minutes) return;
+  const totalSec = minutes*60;
+  state.timer.on = true;
+  state.timer.totalSec = totalSec;
+  state.timer.endAt = Date.now() + totalSec*1000;
+  el("timerBox").style.display = "block";
+
+  const tick = ()=>{
+    const leftMs = state.timer.endAt - Date.now();
+    const left = Math.max(0, Math.ceil(leftMs/1000));
+    const mm = String(Math.floor(left/60)).padStart(2,"0");
+    const ss = String(left%60).padStart(2,"0");
+    el("timerText").innerText = `${mm}:${ss}`;
+    if(left<=0){
+      clearInterval(state.timer.interval);
+      state.timer.interval = null;
+      el("timerText").innerText = "00:00";
+      // lock answering
+      if(state.lastQ && state.lastQ.kind==="mc"){
+        el("feedbackMC").innerText = "הזמן נגמר ⏱️ לחצי על 'שאלה חדשה'.";
+        el("feedbackMC").className = "feedback bad";
+      }else{
+        el("feedback").innerText = "הזמן נגמר ⏱️ לחצי על 'שאלה חדשה'.";
+        el("feedback").className = "feedback bad";
+      }
+    }
+  };
+  tick();
+  state.timer.interval = setInterval(tick, 250);
+}
+
+/* ========= Engine ========= */
+function currentLevel(){
+  return parseInt(diffSel.value,10);
+}
+
+function nextQuestion(){
+  const mode = modeSel.value;
+  const level = currentLevel();
+
+  let q;
+  if(mode==="addsub_same"){
+    q = genAddSubSame(level, Math.random()<0.45);
+  }else if(mode==="addsub_lcm"){
+    q = genAddSubLCM(level, Math.random()<0.45);
+  }else if(mode==="mul"){
+    q = genMul(level);
+  }else if(mode==="div"){
+    q = genDiv(level);
+  }else if(mode==="word"){
+    q = genWord(level);
+  }else if(mode==="review"){
+    if(state.mistakes.length===0){
+      q = genAddSubLCM(level,false);
+      q.sub = "אין טעויות – תרגול רגיל";
+    }else{
+      const m = state.mistakes[randInt(0,state.mistakes.length-1)];
+      // reconstruct as free question with known answer
+      q = {
+        kind: m.kind || "free",
+        q: m.q,
+        sub: "חזרה על טעות",
+        ans: m.ans || (m.correct ? parseFraction(m.correct) : null),
+        ansStr: m.correct,
+        steps: m.steps || ""
+      };
+      // If missing ans object, derive from correct string
+      if(!q.ans && q.ansStr){ q.ans = parseFraction(q.ansStr); }
+      // For MC mistakes, fallback to a generated word problem
+      if(q.kind==="mc"){ q = genWord(level); q.sub="חזרה (בעיה מילולית)"; }
+    }
+  }else{ // mixed
+    const r = Math.random();
+    if(r<0.28) q = genAddSubSame(level, Math.random()<0.45);
+    else if(r<0.62) q = genAddSubLCM(level, Math.random()<0.45);
+    else if(r<0.80) q = genMul(level);
+    else if(r<0.95) q = genDiv(level);
+    else q = genWord(level);
+  }
+
+  setQuestion(q);
+  renderStats();
+  save();
+}
+
+function award(isCorrect){
+  state.total += 1;
+  if(isCorrect){
+    state.correct += 1;
+    state.streak += 1;
+    // scoring: base 10 + streak bonus + difficulty bonus
+    const diff = currentLevel();
+    const add = 10 + Math.min(10, state.streak) + (diff-1)*4;
+    state.score += add;
+    // level up every 8 correct in a row
+    if(state.streak>0 && state.streak % 8 === 0){
+      state.level = Math.min(3, state.level+1);
+    }
+  }else{
+    state.streak = 0;
+  }
+}
+
+function addMistake(m){
+  state.mistakes.push(m);
+  // cap
+  if(state.mistakes.length>50) state.mistakes.shift();
+}
+
+/* ========= Checking ========= */
+function checkFree(){
+  const q = state.lastQ;
+  if(!q || q.kind!=="free") return;
+
+  // if timer ended, prevent
+  if(state.timer.on && (Date.now() >= state.timer.endAt)){
+    el("feedback").innerText = "הזמן נגמר ⏱️ לחצי על 'שאלה חדשה'.";
+    el("feedback").className = "feedback bad";
+    return;
+  }
+
+  const userRaw = el("answer").value;
+  const user = parseFraction(userRaw);
+  const correct = q.ans;
+  const ok = equalFrac(user, correct);
+
+  award(ok);
+
+  if(ok){
+    el("feedback").innerText = "נכון ✅";
+    el("feedback").className = "feedback good";
+  }else{
+    el("feedback").innerText = `לא בדיוק. התשובה הנכונה: ${q.ansStr}`;
+    el("feedback").className = "feedback bad";
+    addMistake({q:q.q, correct:q.ansStr, user:userRaw, kind:"free", steps:q.steps, sub:q.sub, ans:q.ans});
+  }
+
+  // show steps if hints enabled (or when wrong)
+  const allowHints = showHints.checked;
+  if((allowHints && q.steps) || (!ok && q.steps)){
+    el("stepsPre").innerText = q.steps;
+    el("steps").style.display = "block";
+  }
+
+  renderStats();
+  save();
+
+  // auto next after short delay
+  setTimeout(()=> nextQuestion(), ok ? 650 : 900);
+}
+
+function checkMC(choice){
+  const q = state.lastQ;
+  if(!q || q.kind!=="mc") return;
+
+  if(state.timer.on && (Date.now() >= state.timer.endAt)){
+    el("feedbackMC").innerText = "הזמן נגמר ⏱️ לחצי על 'שאלה חדשה'.";
+    el("feedbackMC").className = "feedback bad";
+    return;
+  }
+
+  const ok = (choice === q.correct);
+  award(ok);
+
+  if(ok){
+    el("feedbackMC").innerText = "נכון ✅";
+    el("feedbackMC").className = "feedback good";
+  }else{
+    el("feedbackMC").innerText = `לא. נכון: ${q.correct}`;
+    el("feedbackMC").className = "feedback bad";
+    addMistake({q:q.q, correct:q.correct, user:choice, kind:"mc", steps:q.explain || "", sub:q.sub});
+  }
+
+  if(showHints.checked && q.explain){
+    el("feedbackMC").innerText += " · " + q.explain;
+  }
+
+  renderStats();
+  save();
+  setTimeout(()=> nextQuestion(), ok ? 650 : 900);
+}
+
+/* ========= Hint ========= */
+function showHint(){
+  const q = state.lastQ;
+  if(!q) return;
+  if(!showHints.checked){
+    el("feedback").innerText = "כדי להשתמש ברמזים – סמני 'אפשר רמזים'.";
+    el("feedback").className = "feedback bad";
+    return;
+  }
+  if(q.kind==="mc"){
+    el("feedbackMC").innerText = q.explain ? q.explain : "רמז לא זמין.";
+    el("feedbackMC").className = "feedback";
+    return;
+  }
+  if(q.steps){
+    el("stepsPre").innerText = q.steps;
+    el("steps").style.display = "block";
+  }else{
+    el("feedback").innerText = "רמז לא זמין.";
+    el("feedback").className = "feedback";
+  }
+}
+
+/* ========= Events ========= */
+el("btnCheck").addEventListener("click", checkFree);
+el("answer").addEventListener("keydown", (e)=>{ if(e.key==="Enter") checkFree(); });
+el("btnNext").addEventListener("click", ()=>{ nextQuestion(); });
+el("btnHint").addEventListener("click", showHint);
+
+el("btnReset").addEventListener("click", ()=>{
+  if(!confirm("לאפס ניקוד, סטטיסטיקה וטעויות?")) return;
+  localStorage.removeItem(LS_KEY);
+  state.score=0; state.correct=0; state.total=0; state.streak=0; state.level=1; state.mistakes=[];
+  stopTimer();
+  renderStats();
+  setQuestion({kind:"free", q:"לחצי על \"שאלה חדשה\"", sub:"", ans:{n:0,d:1}, ansStr:"0", steps:""});
+});
+
+el("btnReviewNow").addEventListener("click", ()=>{
+  modeSel.value = "review";
+  nextQuestion();
+});
+
+modeSel.addEventListener("change", ()=>{
+  nextQuestion();
+});
+
+timerSel.addEventListener("change", ()=>{
+  const mins = parseInt(timerSel.value,10);
+  if(mins>0) startTimer(mins);
+  else stopTimer();
+});
+
+diffSel.addEventListener("change", ()=>{
+  // keep user's chosen difficulty; internal "level" is gamified badge
+  nextQuestion();
+});
+
+/* ========= Init ========= */
+load();
+renderStats();
+setQuestion({kind:"free", q:"לחצי על \"שאלה חדשה\"", sub:"", ans:{n:0,d:1}, ansStr:"0", steps:""});
+</script>
+</body>
+</html>
